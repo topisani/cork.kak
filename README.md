@@ -1,5 +1,8 @@
-# CORK
-A git-based plugin manager for kakoune.
+# CORK.KAK
+A fast git-based plugin manager for kakoune.
+
+![image](https://user-images.githubusercontent.com/3133596/128006548-3f1acb2e-3ab0-490e-98ba-8d0cdf1412b4.png)
+
 
 cork depends on [kakoune.cr](https://github.com/alexherbo2/kakoune.cr)
 
