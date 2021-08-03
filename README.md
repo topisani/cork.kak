@@ -32,5 +32,5 @@ The second parameter is the location of the git repository
 The third parameter (usually a block) is optional, and contains
 code that will be run when the plugin is loaded.
 
-#### 4. Install/update plugins using `:cork-update`, or by running
-     `cork update` in a kcr-connected terminal.
+#### 4. Install/update plugins 
+Call `:cork-update` from kakoune, or run `cork update` in a kcr-connected terminal.
