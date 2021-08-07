@@ -32,5 +32,12 @@ The second parameter is the location of the git repository
 The third parameter (usually a block) is optional, and contains
 code that will be run when the plugin is loaded.
 
-#### 4. Install/update plugins 
+#### 4. Disable plugins in your kakrc using the `nop` command:
+```kak
+nop cork tmux https://github.com/alexherbo2/tmux.kak %{
+  tmux-integration-enable
+}
+```
+
+#### 5. Install/update plugins 
 Call `:cork-update` from kakoune, or run `cork update` in a kcr-connected terminal.
