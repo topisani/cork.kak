@@ -115,6 +115,19 @@ setup-load-file() {
      | sed 's/.*/source "&"/' \
      > "$folder/load.kak"
 
+  if [ -d "$folder/repo/colors" ]; then
+    config_dir=$(kcr get -r -V config)
+    if [ -d "$config_dir" ]; then
+      colors_dir="$config_dir/colors"
+      if [ ! -d "$colors_dir" ]; then
+        mkdir $colors_dir
+      fi
+      if [ ! -d "$colors_dir/$name" ]; then
+        ln -s "$folder/repo/colors" "$colors_dir/$name"
+      fi
+    fi
+  fi
+
   echo "trigger-user-hook cork-loaded=$name" >> "$folder/load.kak"
 }
 
@@ -181,7 +194,7 @@ declare-option -hidden -docstring 'cork requires update' bool cork_requires_upda
 declare-option -hidden -docstring 'cork XDG_DATA_HOME path' str cork_xdg_data_home_path %sh(echo "${XDG_DATA_HOME:-$HOME/.local/share}")
 
 declare-option -docstring 'cork install path' str cork_install_path "%opt{cork_xdg_data_home_path}/kak/cork/plugins"
-  
+
 define-command -override cork -params 2..3 -docstring 'cork <name> <repository> [config]' %{
   set-option -add global cork_repository_map %arg{1} %arg{2}
   hook global -group cork-loaded User "cork-loaded=%arg{1}" %arg{3}
@@ -206,7 +219,7 @@ define-command -override cork-update %{
 }
 
 define-command -override cork-script -hidden -params 1.. %{
-  connect-program %opt{cork_script_path} %arg{@} 
+  connect-program %opt{cork_script_path} %arg{@}
 }
 
 define-command -override cork-interactive -hidden -params 1.. %{
