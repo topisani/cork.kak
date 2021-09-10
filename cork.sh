@@ -111,7 +111,7 @@ setup-load-file() {
 
   folder="$install_path/$name"
 
-  find -L "$folder/repo" -type f -name '*\.kak' \
+  find -L "$folder/repo" -type f -name '*\.kak' ! -path "$folder/repo/colors/*" \
      | sed 's/.*/source "&"/' \
      > "$folder/load.kak"
 
