@@ -116,16 +116,7 @@ setup-load-file() {
      > "$folder/load.kak"
 
   if [ -d "$folder/repo/colors" ]; then
-    config_dir=$(kcr get -r -V config)
-    if [ -d "$config_dir" ]; then
-      colors_dir="$config_dir/colors"
-      if [ ! -d "$colors_dir" ]; then
-        mkdir $colors_dir
-      fi
-      if [ ! -d "$colors_dir/$name" ]; then
-        ln -s "$folder/repo/colors" "$colors_dir/$name"
-      fi
-    fi
+    echo "set -add global colorscheme_sources '$folder/repo/colors'" >> "$folder/load.kak"
   fi
 
   echo "trigger-user-hook cork-loaded=$name" >> "$folder/load.kak"
