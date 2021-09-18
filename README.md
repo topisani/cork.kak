@@ -10,7 +10,7 @@ cork depends on [kakoune.cr](https://github.com/alexherbo2/kakoune.cr)
 
 #### 1. Install the cork script to your PATH
 ```sh
-curl -o ~/.local/bin/cork https://github.com/topisani/cork.kak/blob/master/cork.sh
+curl -o ~/.local/bin/cork https://raw.githubusercontent.com/topisani/cork.kak/master/cork.sh
 chmod +x ~/.local/bin/cork
 ```
 
@@ -39,5 +39,5 @@ nop cork tmux https://github.com/alexherbo2/tmux.kak %{
 }
 ```
 
-#### 5. Install/update plugins 
+#### 5. Install/update plugins
 Call `:cork-update` from kakoune, or run `cork update` in a kcr-connected terminal.
