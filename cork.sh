@@ -60,25 +60,44 @@ _confirm() {
   esac
 }
 
-_check_kcr() {
-  if ! kcr send nop; then
-    _fail "cork must be run from a kcr-connected terminal."
+kak_ensure_session() {
+  kak_session=${kak_session:-$KAKOUNE_SESSION}
+  if [ -z "$kak_session" ]; then
+    kak_session=$(mktemp -u "cork-background-session-XXXX")
+    kak -d -s "$kak_session" > /dev/null &
+    pid=$!
+    trap "kill $pid" EXIT
+    _msg "No kakoune session detected. Started headless temporary session at pid $pid"
   fi
+}
+
+kak_send() {
+  kak_ensure_session  
+  echo "$@" | kak -p "$kak_session"
+}
+
+kak_get_opt() {
+  kak_ensure_session
+  opt=$1; shift
+  d=$(mktemp -d --suffix="cork")
+  trap "rm -rf $d" EXIT
+  mkfifo $d/fifo
+  echo "echo -to-file '$d/fifo' %opt[$opt]" | kak -p "$kak_session"
+  cat $d/fifo
 }
 
 # Functions
 
 cork-help() {
   cat <<"EOF"
-A git-based plugin manager for kakoune.
 
-cork depends on kcr (https://github.com/alexherbo2/kakoune.cr)
+A git-based plugin manager for kakoune.
 
 Setup:
 
   1. Install the cork script (for example to `~/.local/bin`)
 
-  2. In the beginning of your `kakrc`, after the kcr init call, add
+  2. In the beginning of your `kakrc`, add
        evaluate-commands %sh{
          cork init
        }
@@ -93,7 +112,7 @@ Setup:
      code that will be run when the plugin is loaded.
 
   4. Install/update plugins using `:cork-update`, or by running
-     `cork update` in a kcr-connected terminal.
+     `cork update` in a terminal.
 
 Usage:
   cork <command> [args...]
@@ -123,8 +142,8 @@ setup-load-file() {
 }
 
 cork-update() {
-  _check_kcr
-  install_path=$(kcr get -r -O cork_install_path)
+  kak_ensure_session
+  install_path=$(kak_get_opt cork_install_path)
 
   while read name repo; do
     folder="$install_path/$name"
@@ -133,7 +152,7 @@ cork-update() {
     if ! [ -d "$folder/repo" ]; then
       _msg "Installing plugin $name → $repo"
       git clone "$repo" "$folder/repo"
-      kcr send source "$folder/load.kak"
+      kak_send source "$folder/load.kak"
     else
       _msg "Updating plugin $name → $repo"
       (cd "$folder/repo"; git pull)
@@ -144,8 +163,8 @@ cork-update() {
 }
 
 cork-clean() {
-  _check_kcr
-  install_path=$(kcr get -r -O cork_install_path)
+  kak_ensure_session
+  install_path=$(kak_get_opt cork_install_path)
   if _confirm "Remove directory $install_path/$1?"; then
     rm -rf "$install_path/$1"
     _msg "Done"
@@ -163,7 +182,8 @@ cork-interactive() {
 }
 
 cork-list() {
-  kcr get -r -O cork_repository_map | while read name; do
+  kak_ensure_session
+  kak_get_opt cork_repository_map | tr ' ' '\n' | while read name; do
     read repo
     echo "$name $repo"
   done
@@ -205,19 +225,15 @@ define-command -override cork-update %{
   try %{
     cork-interactive update
   } catch %{
-    fail "Could not run cork-update. Run cork update manually in a connected terminal"
+    fail "Could not run cork-update. Run `cork update` manually in a terminal"
   }
-}
-
-define-command -override cork-script -hidden -params 1.. %{
-  connect-program %opt{cork_script_path} %arg{@}
 }
 
 define-command -override cork-interactive -hidden -params 1.. %{
   try %{
-    connect popup %opt{cork_script_path} interactive %arg{@}
+    popup env "kak_session=%val{session}" %opt{cork_script_path} interactive %arg{@}
   } catch %{
-    connect terminal %opt{cork_script_path} interactive %arg{@}
+    terminal env "kak_session=%val{session}" %opt{cork_script_path} interactive %arg{@}
   }
 }
 EOF
