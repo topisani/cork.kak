@@ -130,9 +130,13 @@ setup-load-file() {
 
   folder="$install_path/$name"
 
-  find -L "$folder/repo" -type f -name '*\.kak' \
+  find -L "$folder/repo" -type f -name '*\.kak' ! -path "$folder/repo/colors/*" \
      | sed 's/.*/source "&"/' \
      > "$folder/load.kak"
+
+  if [ -d "$folder/repo/colors" ]; then
+    echo "set -add global colorscheme_sources '$folder/repo/colors'" >> "$folder/load.kak"
+  fi
 
   echo "trigger-user-hook cork-loaded=$name" >> "$folder/load.kak"
 }
@@ -201,7 +205,7 @@ declare-option -hidden -docstring 'cork requires update' bool cork_requires_upda
 declare-option -hidden -docstring 'cork XDG_DATA_HOME path' str cork_xdg_data_home_path %sh(echo "${XDG_DATA_HOME:-$HOME/.local/share}")
 
 declare-option -docstring 'cork install path' str cork_install_path "%opt{cork_xdg_data_home_path}/kak/cork/plugins"
-  
+
 define-command -override cork -params 2..3 -docstring 'cork <name> <repository> [config]' %{
   set-option -add global cork_repository_map %arg{1} %arg{2}
   hook global -group cork-loaded User "cork-loaded=%arg{1}" %arg{3}
