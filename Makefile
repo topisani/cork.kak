@@ -1,8 +1,7 @@
 install:
 	install -d ~/.local/bin
-	install cork.sh ~/.local/bin/cork
-	chmod +x ~/.local/bin/cork
-	
+	install -m 0755 cork.sh ~/.local/bin/cork
+
 uninstall:
 	rm -Rf ~/.local/bin/cork
 
