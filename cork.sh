@@ -79,7 +79,7 @@ kak_send() {
 kak_get_opt() {
   kak_ensure_session
   opt=$1; shift
-  d=$(mktemp -d --suffix="cork")
+  d=$(mktemp -d -t cork.XXXXXXXX)
   trap "rm -rf $d" EXIT
   mkfifo $d/fifo
   echo "echo -to-file '$d/fifo' %opt[$opt]" | kak -p "$kak_session"
