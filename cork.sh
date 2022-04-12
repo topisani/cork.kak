@@ -129,10 +129,11 @@ setup-load-file() {
   name=$1
 
   folder="$install_path/$name"
+  echo "echo -debug [cork]: Loading plugin $1..." > "$folder/load.kak"
 
   find -L "$folder/repo" -type f -name '*\.kak' ! -path "$folder/repo/colors/*" \
      | sed 's/.*/source "&"/' \
-     > "$folder/load.kak"
+     >> "$folder/load.kak"
 
   if [ -d "$folder/repo/colors" ]; then
     echo "set -add global colorscheme_sources '$folder/repo/colors'" >> "$folder/load.kak"
@@ -152,12 +153,13 @@ cork-update() {
     if ! [ -d "$folder/repo" ]; then
       _msg "Installing plugin $name → $repo"
       git clone "$repo" "$folder/repo"
+      setup-load-file $name
       kak_send source "$folder/load.kak"
     else
       _msg "Updating plugin $name → $repo"
       (cd "$folder/repo"; git pull)
+      setup-load-file $name
     fi
-    setup-load-file $name
     echo ""
   done <<< $(cork-list)
 }
