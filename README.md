@@ -11,6 +11,9 @@ curl -o ~/.local/bin/cork https://raw.githubusercontent.com/topisani/cork.kak/ma
 chmod +x ~/.local/bin/cork
 ```
 
+##### AUR 
+cork is also packaged in Arch User Repository: https://aur.archlinux.org/packages/cork.kak-git/
+
 #### 2. In the beginning of your `kakrc`, add
 ```kak
 evaluate-commands %sh{
