@@ -131,7 +131,7 @@ setup-load-file() {
   folder="$install_path/$name"
   echo "echo -debug [cork]: Loading plugin $1..." > "$folder/load.kak"
 
-  find -L "$folder/repo" -type f -name '*\.kak' ! -path "$folder/repo/colors/*" \
+  find -L "$folder/repo" -type f -name '*\.kak' ! -name 'test\.kak' ! -path "$folder/repo/colors/*" \
      | sed 's/.*/source "&"/' \
      >> "$folder/load.kak"
 
