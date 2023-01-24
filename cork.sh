@@ -63,7 +63,7 @@ _confirm() {
 kak_ensure_session() {
   kak_session=${kak_session:-$KAKOUNE_SESSION}
   if [ -z "$kak_session" ]; then
-    kak_session=$(mktemp -u "cork-background-session-XXXX")
+    kak_session=$(mktemp -u "cork-background-session-XXXXXXXX")
     kak -d -s "$kak_session" > /dev/null &
     pid=$!
     trap "kill $pid" EXIT
