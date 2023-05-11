@@ -206,7 +206,7 @@ declare-option -hidden -docstring 'cork requires update' bool cork_requires_upda
 # Paths
 declare-option -hidden -docstring 'cork XDG_DATA_HOME path' str cork_xdg_data_home_path %sh(echo "${XDG_DATA_HOME:-$HOME/.local/share}")
 
-declare-option -docstring 'cork install path' str cork_install_path "%opt{cork_xdg_data_home_path}/kak/cork/plugins"
+declare-option -docstring 'cork install path' str cork_install_path "%opt{cork_xdg_data_home_path}/cork/plugins"
 
 define-command -override cork -params 2..3 -docstring 'cork <name> <repository> [config]' %{
   set-option -add global cork_repository_map %arg{1} %arg{2}
