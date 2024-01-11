@@ -1,108 +1,121 @@
-#!/usr/bin/env bash
+#!/usr/bin/env sh
 
 cork_script_path=$(realpath "$0")
 
 # Utils
 
 _err() {
-  tput setaf 1
-  tput bold
-  echo -n "==> "
-  tput sgr0
-  tput bold
-  echo "$@"
-  tput sgr0
-  return 1
+	tput setaf 1
+	tput bold
+	printf '%s' '==> '
+	tput sgr0
+	tput bold
+	echo "$@"
+	tput sgr0
+	return 1
 }
 
 _suberr() {
-  tput setaf 1
-  tput bold
-  echo -n " -> "
-  tput sgr0
-  tput bold
-  echo "$@"
-  tput sgr0
-  return 1
+	tput setaf 1
+	tput bold
+	printf '%s' ' -> '
+	tput sgr0
+	tput bold
+	echo "$@"
+	tput sgr0
+	return 1
 }
 
 _msg() {
-  tput setaf 2
-  tput bold
-  echo -n "==> "
-  tput sgr0
-  # tput bold
-  echo "$@"
-  tput sgr0
+	tput setaf 2
+	tput bold
+	printf '%s' '==> '
+	tput sgr0
+	# tput bold
+	echo "$@"
+	tput sgr0
 }
 
 _submsg() {
-  tput setaf 12
-  tput bold
-  echo -n " -> "
-  tput sgr0
-  # tput bold
-  echo "$@"
-  tput sgr0
+	tput setaf 12
+	tput bold
+	printf '%s' ' -> '
+	tput sgr0
+	# tput bold
+	echo "$@"
+	tput sgr0
 }
 
 _fail() {
-  _err "$@"
-  exit 1
+	_err "$@"
+	exit 1
+}
+
+_read_byte() {
+	saveterm="$(stty -g)" # save terminal state
+	stty raw
+	stty -echo -icanon min 1 time 0       # prepare to read one byte
+	var="$(dd ibs=1 count=1 2>/dev/null)" # read one byte
+	stty -icanon min 0 time 0             # prepare to read lefotvers
+	while read none; do :; done           # read leftovers
+	stty "$saveterm"                      # restore terminal state
+	echo "$var"
 }
 
 _confirm() {
-  read -n 1 -p "$(tput setaf 2)$(tput bold)==>$(tput sgr0) $1 [Y/n]: "
-  echo ""
-  case $(echo $REPLY | tr '[A-Z]' '[a-z]') in
-    y) return 0 ;;
-    *) return 1 ;;
-  esac
+	printf '%s' "$(tput setaf 2)$(tput bold)==>$(tput sgr0) $1 [y/n]: "
+	input="$(_read_byte)"
+	printf '%s' '\n'
+	case "$(echo "$input" | tr '[:upper:]' '[:lower:]')" in
+	y) return 0 ;;
+	*) return 1 ;;
+	esac
 }
 
 kak_ensure_session() {
-  kak_session=${kak_session:-$KAKOUNE_SESSION}
-  if [ -z "$kak_session" ]; then
-    kak_session=$(mktemp -u "cork-background-session-XXXXXXXX")
-    kak -d -s "$kak_session" > /dev/null &
-    pid=$!
-    trap "kill $pid" EXIT
-    _msg "No kakoune session detected. Started headless temporary session at pid $pid"
-  fi
+	kak_session="${kak_session:-$KAKOUNE_SESSION}"
+	if [ -z "$kak_session" ]; then
+		kak_session="$(mktemp -u "cork-background-session-XXXXXXXX")"
+		kak -d -s "$kak_session" >/dev/null &
+		pid=$!
+		trap "kill $pid" EXIT
+		_msg "No kakoune session detected. Started headless temporary session at pid $pid"
+	fi
 }
 
 kak_send() {
-  kak_ensure_session  
-  echo "$@" | kak -p "$kak_session"
+	kak_ensure_session
+	echo "$@" | kak -p "$kak_session"
 }
 
 kak_get_opt() {
-  kak_ensure_session
-  opt=$1; shift
-  d=$(mktemp -d -t cork.XXXXXXXX)
-  trap "rm -rf $d" EXIT
-  mkfifo $d/fifo
-  echo "echo -to-file '$d/fifo' %opt[$opt]" | kak -p "$kak_session"
-  cat $d/fifo
+	kak_ensure_session
+	opt=$1
+	shift
+	d=$(mktemp -d -t cork.XXXXXXXX)
+	trap "rm -rf $d" EXIT
+	mkfifo "$d/fifo"
+	echo "echo -to-file '$d/fifo' %opt[$opt]" | kak -p "$kak_session"
+	cat "$d/fifo"
 }
 
 # Functions
 
-cork-help() {
-  cat <<"EOF"
+cork_help() {
+	cat <<EOF
 
 A git-based plugin manager for kakoune.
 
 Setup:
 
-  1. Install the cork script (for example to `~/.local/bin`)
+  1. Install the cork script (for example to \`~/.local/bin\`)
 
-  2. In the beginning of your `kakrc`, add
+  2. In the beginning of your \`kakrc\`, add
        evaluate-commands %sh{
          cork init
        }
 
-  3. Declare plugins in your kakrc using the `cork` command:
+  3. Declare plugins in your kakrc using the \`cork\` command:
        cork tmux https://github.com/alexherbo2/tmux.kak %{
          tmux-integration-enable
        }
@@ -111,8 +124,8 @@ Setup:
      The third parameter (usually a block) is optional, and contains
      code that will be run when the plugin is loaded.
 
-  4. Install/update plugins using `:cork-update`, or by running
-     `cork update` in a terminal.
+  4. Install/update plugins using \`:cork-update\`, or by running
+     \`cork update\` in a terminal.
 
 Usage:
   cork <command> [args...]
@@ -125,75 +138,73 @@ Commands:
 EOF
 }
 
-setup-load-file() {
-  name=$1
+setup_load_file() {
+	name=$1
 
-  folder="$install_path/$name"
-  echo "echo -debug [cork]: Loading plugin $1..." > "$folder/load.kak"
+	folder="$install_path/$name"
+	echo "echo -debug [cork]: Loading plugin $1..." >"$folder/load.kak"
 
-  find -L "$folder/repo" -type f -name '*\.kak' ! -path '*test*' ! -path "$folder/repo/colors/*" \
-     | sed 's/.*/source "&"/' \
-     >> "$folder/load.kak"
+	find -L "$folder/repo" -type f -name '*\.kak' ! -path '*test*' ! -path "$folder/repo/colors/*" |
+		sed 's/.*/source "&"/' \
+			>>"$folder/load.kak"
 
-  if [ -d "$folder/repo/colors" ]; then
-    echo "set -add global colorscheme_sources '$folder/repo/colors'" >> "$folder/load.kak"
-  fi
+	if [ -d "$folder/repo/colors" ]; then
+		echo "set -add global colorscheme_sources '$folder/repo/colors'" >>"$folder/load.kak"
+	fi
 
-  echo "trigger-user-hook cork-loaded=$name" >> "$folder/load.kak"
+	echo "trigger-user-hook cork-loaded=$name" >>"$folder/load.kak"
 }
 
-cork-update() {
-  kak_ensure_session
-  install_path=$(kak_get_opt cork_install_path)
+cork_update() {
+	kak_ensure_session
+	install_path="$(kak_get_opt cork_install_path)"
 
-  while read name repo; do
-    folder="$install_path/$name"
-    mkdir -p "$folder"
+	cork_list | while read -r name repo; do
+		folder="$install_path/$name"
+		mkdir -p "$folder"
 
-    if ! [ -d "$folder/repo" ]; then
-      _msg "Installing plugin $name → $repo"
-      git clone "$repo" "$folder/repo"
-      setup-load-file $name
-      kak_send source "$folder/load.kak"
-    else
-      _msg "Updating plugin $name → $repo"
-      (cd "$folder/repo"; git pull)
-      setup-load-file $name
-    fi
-    echo ""
-  done <<< $(cork-list)
+		if ! [ -d "$folder/repo" ]; then
+			_msg "Installing plugin $name → $repo"
+			git clone "$repo" "$folder/repo"
+			setup_load_file "$name"
+			kak_send source "$folder/load.kak"
+		else
+			_msg "Updating plugin $name → $repo"
+			(cd "$folder/repo" && git pull)
+			setup_load_file "$name"
+		fi
+		echo ""
+	done
 }
 
-cork-clean() {
-  kak_ensure_session
-  install_path=$(kak_get_opt cork_install_path)
-  if _confirm "Remove directory $install_path/$1?"; then
-    rm -rf "$install_path/$1"
-    _msg "Done"
-  else
-    _fail "No action"
-  fi
+cork_clean() {
+	kak_ensure_session
+	install_path="$(kak_get_opt cork_install_path)"
+	rm -irf "${install_path:?}/${1:?}" && _msg "Done"
 }
 
-cork-interactive() {
-  cmd=$1; shift
-  cork-$cmd "$@"
-  echo ""
-  echo "Done!"
-  read -rsn1 -p"Press any key to exit"
+cork_interactive() {
+	cmd=$1
+	shift
+	"cork_$cmd" "$@"
+	echo ""
+	echo "Done!"
+	printf '%s' "Press any key to exit"
+	input="$(_read_byte)"
+	printf '%s' '\n'
 }
 
-cork-list() {
-  kak_ensure_session
-  kak_get_opt cork_repository_map | tr ' ' '\n' | while read name; do
-    read repo
-    echo "$name $repo"
-  done
+cork_list() {
+	kak_ensure_session
+	kak_get_opt cork_repository_map | tr ' ' '\n' | while read -r name; do
+		read -r repo
+		echo "$name $repo"
+	done
 }
 
-cork-init() {
-  echo "declare-option -docstring 'cork script' str cork_script_path '$cork_script_path'"
-  cat <<"EOF"
+cork_init() {
+	echo "declare-option -docstring 'cork script' str cork_script_path '$cork_script_path'"
+	cat <<EOF
 # kakscript to initialize cork
 # Use by adding the following to the top of your kakrc:
 # evaluate-commands %sh{
@@ -227,7 +238,7 @@ define-command -override cork-update %{
   try %{
     cork-interactive update
   } catch %{
-    fail "Could not run cork-update. Run `cork update` manually in a terminal"
+    fail "Could not run cork-update. Run \$(cork update) manually in a terminal"
   }
 }
 
@@ -243,5 +254,6 @@ EOF
 
 # Evaluate
 
-cmd=${1:-help}; shift
-cork-$cmd "$@"
+cmd=${1:-help}
+shift
+"cork_$cmd" "$@"
