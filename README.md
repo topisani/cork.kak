@@ -1,3 +1,7 @@
+# ⚠️ Archived ⚠️
+
+I recommend using https://github.com/jdugan6240/kak-bundle instead, as it does everything cork does but better and more. Translating your config should be fairly easy
+
 # CORK.KAK
 A fast git-based plugin manager for kakoune.
 
